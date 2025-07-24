@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Track your daily expenses with budget alerts">
+  <title>Advanced Expense Tracker</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="loader" id="loader"></div>
+  
+  <button class="dark-toggle" id="themeToggle" title="Toggle Theme" aria-label="Toggle dark mode">🌙</button>
+
+  <main class="container">
+    <h1 class="title-animate">Advanced Expense Tracker</h1>
+
+    <div class="input-section">
+      <div class="input-group">
+        <label for="expenseDate"><i class="fas fa-calendar-alt"></i> Date</label>
+        <input type="date" id="expenseDate" value="" max="" autocomplete="off" aria-describedby="expenseDate-label">
+        <span id="expenseDate-label" class="sr-only">Select the date of the expense</span>
+      </div>
+
+      <div class="input-group">
+        <label for="expense"><i class="fas fa-money-bill-wave"></i> Amount</label>
+        <input type="number" id="expense" min="0" step="0.01" placeholder="0.00" required autofocus aria-describedby="expense-label">
+        <span id="expense-label" class="sr-only">Enter the expense amount</span>
+      </div>
+
+      <div class="input-group">
+        <label for="category"><i class="fas fa-tags"></i> Category</label>
+        <select id="category" aria-describedby="category-label">
+          <option value="">Select Category</option>
+          <option value="Food" data-icon="fa-utensils">Food</option>
+          <option value="Travel" data-icon="fa-plane">Travel</option>
+          <option value="Shopping" data-icon="fa-shopping-bag">Shopping</option>
+          <option value="Entertainment" data-icon="fa-gamepad">Entertainment</option>
+          <option value="Bills" data-icon="fa-file-invoice-dollar">Bills</option>
+          <option value="Other" data-icon="fa-ellipsis-h">Other</option>
+        </select>
+        <span id="category-label" class="sr-only">Select or enter a category for the expense</span>
+      </div>
+
+      <div class="input-group" id="customCategoryGroup" style="display:none;">
+        <label for="customCategory"><i class="fas fa-plus-circle"></i> Custom Category</label>
+        <input type="text" id="customCategory" placeholder="Enter category name" aria-describedby="customCategory-label">
+        <span id="customCategory-label" class="sr-only">Enter a custom category name</span>
+      </div>
+
+      <div class="input-group">
+        <label for="note"><i class="fas fa-sticky-note"></i> Note</label>
+        <input type="text" id="note" placeholder="Optional description" aria-describedby="note-label">
+        <span id="note-label" class="sr-only">Optional description for the expense</span>
+      </div>
+
+      <div class="input-group">
+        <label for="currency"><i class="fas fa-money-check-alt"></i> Currency</label>
+        <select id="currency" aria-describedby="currency-label">
+          <option value="INR">INR (₹)</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="JPY">JPY (¥)</option>
+          <option value="CAD">CAD (CA$)</option>
+          <option value="AUD">AUD (A$)</option>
+          <option value="CNY">CNY (¥)</option>
+          <option value="CHF">CHF (CHF)</option>
+          <option value="KRW">KRW (₩)</option>
+        </select>
+        <span id="currency-label" class="sr-only">Select the currency for the expense</span>
+      </div>
+
+      <div class="input-group">
+        <label for="recurring"><i class="fas fa-sync-alt"></i> Recurring</label>
+        <select id="recurring" aria-describedby="recurring-label">
+          <option value="none">One-time</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+        <span id="recurring-label" class="sr-only">Select if the expense is recurring</span>
+      </div>
+
+      <div class="button-group">
+        <button id="addExpenseBtn">
+          <span class="btn-text">Add Expense</span>
+          <span class="btn-loader" style="display:none;">
+            <i class="fas fa-spinner fa-spin"></i>
+          </span>
+        </button>
+        <button id="resetCurrency" style="display:none;">Reset Currency</button>
+      </div>
+    </div>
+
+    <div class="budget-section slide-in">
+      <h2><i class="fas fa-wallet"></i> Budget Control</h2>
+      <div class="budget-controls">
+        <div class="budget-input">
+          <label for="budgetType"><i class="fas fa-wallet"></i> Budget Type</label>
+          <select id="budgetType" aria-describedby="budgetType-label">
+            <option value="total">Total Budget</option>
+            <option value="Food">Food</option>
+            <option value="Travel">Travel</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Bills">Bills</option>
+            <option value="Other">Other</option>
+          </select>
+          <span id="budgetType-label" class="sr-only">Select the budget type</span>
+          <input type="number" id="budgetAmount" placeholder="Budget amount" min="0" step="0.01" aria-describedby="budgetAmount-label">
+          <span id="budgetAmount-label" class="sr-only">Enter the budget amount</span>
+          <button id="setBudgetBtn" aria-label="Set budget">Set Budget</button>
+        </div>
+      </div>
+      <div class="budget-display">
+        <p>Total: <span id="totalBudgetDisplay">₹0.00</span>/<span id="totalBudgetLimit">∞</span></p>
+        <div id="categoryBudgets"></div>
+      </div>
+    </div>
+
+    <div class="summary slide-in">
+      <h2><i class="fas fa-chart-pie"></i> Summary</h2>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <p>Today</p>
+          <span id="summary-today">₹0.00</span>
+        </div>
+        <div class="summary-card">
+          <p>This Week</p>
+          <span id="summary-week">₹0.00</span>
+        </div>
+        <div class="summary-card">
+          <p>This Month</p>
+          <span id="summary-month">₹0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="history slide-in">
+      <h2><i class="fas fa-history"></i> Expense History</h2>
+      <div class="filter-controls">
+        <select id="filterPeriod" aria-label="Filter expenses by period">
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+        <input type="text" id="search" placeholder="Search..." aria-label="Search expenses">
+      </div>
+      <ul id="expenseList" role="list" aria-live="polite"></ul>
+    </div>
+
+    <div class="export-buttons slide-in">
+      <button class="export-btn"><i class="fas fa-file-pdf"></i> Export PDF</button>
+      <button class="export-btn"><i class="fas fa-file-excel"></i> Export Excel</button>
+      <button class="export-btn"><i class="fas fa-trash-alt"></i> Clear All</button>
+    </div>
+  </main>
+
+  <div id="print-section" class="print-only">
+    <h1>Expense Report</h1>
+    <p id="print-date"></p>
+    <table id="print-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Category</th>
+          <th>Note</th>
+          <th>Recurring</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="print-summary">
+      <p>Today: <span id="print-today"></span></p>
+      <p>This Week: <span id="print-week"></span></p>
+      <p>This Month: <span id="print-month"></span></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <noscript>Please enable JavaScript to use this application.</noscript>
+</body>
+</html>
